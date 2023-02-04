@@ -10,26 +10,44 @@ const session = driver.session();
 //
 // GET /movies
 //
-const getAllMovies = () => {
-  session
-    .run("MATCH (movie:Movie) RETURN movie LIMIT 25")
-    .then((result) => {
-      const movies = result.records.map((record) => {
-        return {
-          id: record._fields[0].identity.low,
-          title: record._fields[0].properties.title,
-          tagline: record._fields[0].properties.tagline,
-          released: record._fields[0].properties.release_date,
-        };
-      });
-      console.log(movies);
-      return movies;
-    })
-    .catch((error) => {
-      console.log(error);
-    });
+const getAllMovies = async (page) => {
+  const result = await session.run(
+    `MATCH (movie:Movie) RETURN movie ${
+      page > 1 ? `SKIP ${(page - 1) * 20}` : ""
+    } LIMIT 20`
+  );
+  const movies = result.records.map((record) => {
+    return {
+      id: record._fields[0].properties.id,
+      tmdbId: record._fields[0].properties.tmdbId,
+      title: record._fields[0].properties.title,
+      tagline: record._fields[0].properties.tagline,
+      released: record._fields[0].properties.release_date,
+    };
+  });
+  return { page: page, movies };
+};
+
+const searchMovies = async (query, page) => {
+  const result = await session.run(
+    `MATCH (movie:Movie) WHERE toLower(movie.title) CONTAINS toLower($query) RETURN movie ${
+      page > 1 ? `SKIP ${(page - 1) * 20}` : ""
+    } LIMIT 20`,
+    { query: query }
+  );
+  const movies = result.records.map((record) => {
+    return {
+      id: record._fields[0].properties.id,
+      tmdbId: record._fields[0].properties.tmdbId,
+      title: record._fields[0].properties.title,
+      tagline: record._fields[0].properties.tagline,
+      released: record._fields[0].properties.release_date,
+    };
+  });
+  return { page: page, movies };
 };
 
 module.exports = {
   getAllMovies,
+  searchMovies,
 };
