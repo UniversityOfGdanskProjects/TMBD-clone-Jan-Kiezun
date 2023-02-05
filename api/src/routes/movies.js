@@ -7,6 +7,7 @@ const {
   searchMovies,
   getPopularMovies,
   addMovie,
+  updateMovie,
   addComment,
   getComments,
   setRating,
@@ -14,6 +15,7 @@ const {
 } = require("../controllers/movies");
 const API_KEY = process.env.API_KEY;
 const axios = require("axios");
+const bcrypt = require("bcrypt");
 
 router.get("/", async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -21,10 +23,11 @@ router.get("/", async (req, res) => {
   res.send(movies);
 });
 
-router.get("/:id", async (req, res) => {
-  const id = req.params.id;
-  const movie = await getMovie(id);
-  res.send(movie);
+router.get("/popular", async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  console.log("page: ", page);
+  const movies = await getPopularMovies(page);
+  res.send(movies);
 });
 
 router.get("/search", async (req, res) => {
@@ -37,19 +40,30 @@ router.get("/search", async (req, res) => {
   const movies = await searchMovies(query, page, genre, sort_field, asc);
   res.send(movies);
 });
-
-router.get("/popular", async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const movies = await getPopularMovies(page);
-  res.send(movies);
+router.get("/:id", async (req, res) => {
+  const id = req.params.id;
+  const movie = await getMovie(id);
+  res.send(movie);
 });
 
+//
+//MOVIE CRUD
+//
 router.post("/add", async (req, res) => {
   const movie = req.body;
   const result = await addMovie(movie);
   res.send({ message: "Movie added", result });
 });
 
+router.patch("/:movie_id", async (req, res) => {
+  const movie_id = req.params.movie_id;
+  const movie = req.body;
+  const result = await updateMovie(movie_id, movie);
+  res.send({ message: "Movie updated", result });
+});
+//
+//COMMENTS CRUD
+//
 router.post("/comments/add", async (req, res) => {
   const comment = req.body;
   const result = await addComment(comment);
@@ -61,7 +75,9 @@ router.get("/comments/:id", async (req, res) => {
   const comments = await getComments(id);
   res.send(comments);
 });
-
+//
+//RATINGS CRUD
+//
 router.put("/ratings/set", async (req, res) => {
   const rating = req.body;
   const result = await setRating(rating);

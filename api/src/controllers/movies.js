@@ -6,9 +6,8 @@ const driver = neo4j.driver(
   neo4j.auth.basic(process.env.NEO4J_USERNAME, process.env.NEO4J_PASSWORD)
 );
 
-const session = driver.session();
-
 const getAllMovies = async (page) => {
+  const session = driver.session();
   const result = await session.run(
     `MATCH (movie:Movie) RETURN movie ${
       page > 1 ? `SKIP ${(page - 1) * 20}` : ""
@@ -23,10 +22,13 @@ const getAllMovies = async (page) => {
       released: record._fields[0].properties.release_date,
     };
   });
-  return { page: page, movies };
+  const total = await session.run(`MATCH (movie:Movie) RETURN count(movie)`);
+  const maxPages = Math.ceil(total.records[0]._fields[0].low / 20);
+  return { maxPages, page, movies };
 };
 
 const getMovie = async (id) => {
+  const session = driver.session();
   const result = await session.run(
     `match (u:User)-[r:RATED]->(m:Movie {id: $id}) return u,r,m`,
     { id: id }
@@ -38,7 +40,16 @@ const getMovie = async (id) => {
       timestamp: record._fields[1].properties.timestamp,
     };
   });
-  const movie = result.records[0]._fields[2].properties;
+  // console.log(result.records[0]._fields[2]);
+  const movie = {
+    ...result.records[0]._fields[2].properties,
+    genres: result.records[0]._fields[2].properties.genres
+      .split("'")
+      .filter((e, i) => i & 1)
+      .filter((word) => word !== "id" && word !== "name"),
+  };
+  console.log(movie);
+
   const comments = await getComments(id);
   const allInfo = { ratings: ratings, comments: comments, movie: movie };
   return allInfo;
@@ -46,23 +57,31 @@ const getMovie = async (id) => {
 
 const searchMovies = async (phrase, page, genre, sort_field, asc) =>
   new Promise((resolve, reject) => {
+    const session = driver.session();
     const whereClause = `WHERE toLower(m.genres) CONTAINS toLower($genre) AND toLower(m.title) CONTAINS toLower($phrase)`;
     const sortClause = sort_field ? `ORDER BY m.${sort_field} ${asc}` : "";
     const paginate = page > 1 ? `SKIP ${(page - 1) * 20}` : "";
     const query = `MATCH (m:Movie) ${whereClause} RETURN m ${sortClause} ${paginate} LIMIT 20`;
     session
       .run(query, { phrase: phrase, genre: genre })
-      .then((result) => {
+      .then(async (result) => {
         const movies = result.records.map((record) => {
           return {
             id: record._fields[0].properties.id,
             tmdbId: record._fields[0].properties.tmdbId,
             title: record._fields[0].properties.title,
             tagline: record._fields[0].properties.tagline,
-            released: record._fields[0].properties.release_date,
+            poster_path: record._fields[0].properties.poster_path,
           };
         });
-        resolve({ page: page, movies });
+        const session2 = driver.session();
+        const query2 = `MATCH (m:Movie) ${whereClause} RETURN count(m)`;
+        const total = await session2.run(query2, {
+          phrase: phrase,
+          genre: genre,
+        });
+        const maxPages = Math.ceil(total.records[0]._fields[0].low / 20);
+        resolve({ maxPages, page, movies });
       })
       .catch((error) => {
         reject(error);
@@ -70,12 +89,14 @@ const searchMovies = async (phrase, page, genre, sort_field, asc) =>
   });
 
 const checkIfIdExists = async (id) => {
+  const session = driver.session();
   const result = await session.run(`MATCH (m:Movie {id: $id}) RETURN m`, {
     id: id,
   });
   return result.records.length > 0;
 };
 const getPages = new Promise((resolve, reject) => {
+  const session = driver.session();
   session
     .run(`MATCH (movie:Movie) RETURN count(movie)`)
     .then((result) => {
@@ -88,8 +109,10 @@ const getPages = new Promise((resolve, reject) => {
 });
 
 const getPopularMovies = async (page) => {
+  const session = driver.session();
+  console.log("page", page);
   const result = await session.run(
-    `MATCH (movie:Movie) RETURN movie ORDER BY movie.popularity DESC ${
+    `MATCH (movie:Movie) RETURN movie ORDER BY toFloat(movie.popularity) DESC ${
       page > 1 ? `SKIP ${(page - 1) * 20}` : ""
     } LIMIT 20`
   );
@@ -99,14 +122,19 @@ const getPopularMovies = async (page) => {
       tmdbId: record._fields[0].properties.tmdbId,
       title: record._fields[0].properties.title,
       tagline: record._fields[0].properties.tagline,
+      overview: record._fields[0].properties.overview,
       released: record._fields[0].properties.release_date,
       popularity: record._fields[0].properties.popularity,
+      poster_path: record._fields[0].properties.poster_path,
     };
   });
-  return { page: page, movies };
+  const total = await session.run(`MATCH (movie:Movie) RETURN count(movie)`);
+  const maxPages = Math.ceil(total.records[0]._fields[0].low / 20);
+  return { maxPages, page, movies };
 };
 
 const addMovie = async (movie) => {
+  const session = driver.session();
   const {
     title,
     tagline,
@@ -144,9 +172,26 @@ const addMovie = async (movie) => {
 };
 
 const addComment = async (comment) => {
+  const session = driver.session();
   const { movieId, userId, text, timestamp } = comment;
   const query = `MATCH (m:Movie {id: $movieId}), (u:User {id: $userId})
-  CREATE (u)-[r:COMMENTED {text: $text, timestamp: $timestamp}]->(m)
+  CALL apoc.create.relationship(u, "COMMENTED", {text: $text, timestamp: $timestamp}, m) YIELD rel
+  RETURN r`;
+  const params = {
+    movieId,
+    userId,
+    text,
+    timestamp,
+  };
+  const result = await session.run(query, params);
+  return result.records[0]._fields[0].properties;
+};
+
+const updateComment = async (comment) => {
+  const session = driver.session();
+  const { movieId, userId, text, timestamp } = comment;
+  const query = `MATCH (u:User {id: $userId})-[r:COMMENTED]->(m:Movie {id: $movieId})
+  SET r.text = $text, r.timestamp = $timestamp
   RETURN r`;
   const params = {
     movieId,
@@ -159,6 +204,7 @@ const addComment = async (comment) => {
 };
 
 const getComments = async (movieId) => {
+  const session = driver.session();
   const query = `MATCH (u:User)-[r:COMMENTED]->(m:Movie {id: $movieId})
   RETURN u,r,m`;
   const params = {
@@ -176,6 +222,7 @@ const getComments = async (movieId) => {
 };
 
 const setRating = async (rating_data) => {
+  const session = driver.session();
   const { movieId, userId, rating, timestamp } = rating_data;
   const query = `MATCH (m:Movie {id: $movieId}), (u:User {id: $userId})
   MERGE (u)-[r:RATED]->(m)
@@ -192,6 +239,7 @@ const setRating = async (rating_data) => {
 };
 
 const getRatings = async (movieId) => {
+  const session = driver.session();
   const query = `MATCH (u:User)-[r:RATED]->(m:Movie {id: $movieId})
   RETURN u,r,m`;
   const params = {
