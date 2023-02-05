@@ -8,19 +8,7 @@ function NavBar() {
   const navigate = useNavigate();
   return (
     <div
-      className="
-        w-full
-        h-16
-        bg-gradient-to-br
-        from-gray-800
-        to-gray-900
-        flex
-        justify-center
-        items-center
-        text-white
-        text-2xl
-        font-bold
-        select-none
+      className=" w-full h-16  bg-gradient-to-br from-gray-800 to-gray-900 flex justify-center items-center text-white text-2xl font-bold select-none
 
   "
     >
