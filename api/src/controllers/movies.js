@@ -55,37 +55,35 @@ const searchMovies = async (phrase, page, genres, sort_field, asc) =>
   new Promise((resolve, reject) => {
     const session1 = driver.session();
     const session2 = driver.session();
-    const genresClause =
-      "AND all(n in nodes(path) WHERE " +
-      genres
-        .map((genre) => `toLower(g.name) = toLower("${genre}")`)
-        .join(" OR ") +
-      ")";
-    const whereClause = `WHERE toLower(m.title) CONTAINS toLower("${phrase}") ${
-      genres.length ? genresClause : ""
-    }`;
+    const genresClause = genres.length
+      ? "WITH m, collect(toLower(g.name)) AS nodeGenres, $genres AS genres WHERE all(g IN split(genres,',') WHERE toLower(g) IN nodeGenres) "
+      : "";
+    const whereClause = `${
+      genres.length ? " AND " : " WHERE "
+    } toLower(m.title) CONTAINS toLower("${phrase}")`;
     const toFloat =
       sort_field in ["rating", "popularity", "vote_average", "vote_count"];
     const sortClause = sort_field ? `ORDER BY m.${sort_field} ${asc}` : "";
     const paginate = page > 1 ? `SKIP ${(page - 1) * 20}` : "";
-    const query1 = `MATCH path=(m:Movie)-[r:GENRE]->(g:Genre) ${whereClause} RETURN DISTINCT m ${sortClause} ${paginate} LIMIT 20`;
-    const query2 = `MATCH path=(m:Movie)-[r:GENRE]->(g:Genre) ${whereClause} RETURN count(m)`;
+    const query1 = `MATCH (m:Movie)-[r:GENRE]->(g:Genre) ${genresClause} ${whereClause} RETURN DISTINCT m ${sortClause} ${paginate} LIMIT 20`;
+    const query2 = `MATCH (m:Movie)-[r:GENRE]->(g:Genre) ${genresClause} ${whereClause} RETURN count(m)`;
     console.log(query1);
-    Promise.all([session1.run(query1), session2.run(query2)]).then(
-      ([result, total]) => {
-        const movies = result.records.map((record) => {
-          return {
-            id: record._fields[0].properties.id,
-            tmdbId: record._fields[0].properties.tmdbId,
-            title: record._fields[0].properties.title,
-            tagline: record._fields[0].properties.tagline,
-            poster_path: record._fields[0].properties.poster_path,
-          };
-        });
-        const maxPages = Math.ceil(total.records[0]._fields[0].low / 20);
-        resolve({ maxPages, page, movies });
-      }
-    );
+    Promise.all([
+      session1.run(query1, { genres: genres.toString() }),
+      session2.run(query2, { genres: genres.toString() }),
+    ]).then(([result, total]) => {
+      const movies = result.records.map((record) => {
+        return {
+          id: record._fields[0].properties.id,
+          tmdbId: record._fields[0].properties.tmdbId,
+          title: record._fields[0].properties.title,
+          tagline: record._fields[0].properties.tagline,
+          poster_path: record._fields[0].properties.poster_path,
+        };
+      });
+      const maxPages = Math.ceil(total.records[0]._fields[0].low / 20);
+      resolve({ maxPages, page, movies });
+    });
   });
 
 const checkIfIdExists = async (id) => {
