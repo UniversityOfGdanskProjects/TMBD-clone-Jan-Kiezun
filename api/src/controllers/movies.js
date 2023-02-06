@@ -5,7 +5,9 @@ const driver = neo4j.driver(
   process.env.NEO4J_URI,
   neo4j.auth.basic(process.env.NEO4J_USERNAME, process.env.NEO4J_PASSWORD)
 );
-
+//
+//Movies
+//
 const getAllMovies = async (page) => {
   const session = driver.session();
   const result = await session.run(
@@ -41,30 +43,36 @@ const getMovie = async (id) => {
     };
   });
   // console.log(result.records[0]._fields[2]);
-  const movie = {
-    ...result.records[0]._fields[2].properties,
-    genres: result.records[0]._fields[2].properties.genres
-      .split("'")
-      .filter((e, i) => i & 1)
-      .filter((word) => word !== "id" && word !== "name"),
-  };
+  const movie = result.records[0]._fields[2].properties;
   console.log(movie);
 
   const comments = await getComments(id);
-  const allInfo = { ratings: ratings, comments: comments, movie: movie };
+  const allInfo = movie;
   return allInfo;
 };
 
-const searchMovies = async (phrase, page, genre, sort_field, asc) =>
+const searchMovies = async (phrase, page, genres, sort_field, asc) =>
   new Promise((resolve, reject) => {
-    const session = driver.session();
-    const whereClause = `WHERE toLower(m.genres) CONTAINS toLower($genre) AND toLower(m.title) CONTAINS toLower($phrase)`;
+    const session1 = driver.session();
+    const session2 = driver.session();
+    const genresClause =
+      "AND all(n in nodes(path) WHERE " +
+      genres
+        .map((genre) => `toLower(g.name) = toLower("${genre}")`)
+        .join(" OR ") +
+      ")";
+    const whereClause = `WHERE toLower(m.title) CONTAINS toLower("${phrase}") ${
+      genres.length ? genresClause : ""
+    }`;
+    const toFloat =
+      sort_field in ["rating", "popularity", "vote_average", "vote_count"];
     const sortClause = sort_field ? `ORDER BY m.${sort_field} ${asc}` : "";
     const paginate = page > 1 ? `SKIP ${(page - 1) * 20}` : "";
-    const query = `MATCH (m:Movie) ${whereClause} RETURN m ${sortClause} ${paginate} LIMIT 20`;
-    session
-      .run(query, { phrase: phrase, genre: genre })
-      .then(async (result) => {
+    const query1 = `MATCH path=(m:Movie)-[r:GENRE]->(g:Genre) ${whereClause} RETURN DISTINCT m ${sortClause} ${paginate} LIMIT 20`;
+    const query2 = `MATCH path=(m:Movie)-[r:GENRE]->(g:Genre) ${whereClause} RETURN count(m)`;
+    console.log(query1);
+    Promise.all([session1.run(query1), session2.run(query2)]).then(
+      ([result, total]) => {
         const movies = result.records.map((record) => {
           return {
             id: record._fields[0].properties.id,
@@ -74,18 +82,10 @@ const searchMovies = async (phrase, page, genre, sort_field, asc) =>
             poster_path: record._fields[0].properties.poster_path,
           };
         });
-        const session2 = driver.session();
-        const query2 = `MATCH (m:Movie) ${whereClause} RETURN count(m)`;
-        const total = await session2.run(query2, {
-          phrase: phrase,
-          genre: genre,
-        });
         const maxPages = Math.ceil(total.records[0]._fields[0].low / 20);
         resolve({ maxPages, page, movies });
-      })
-      .catch((error) => {
-        reject(error);
-      });
+      }
+    );
   });
 
 const checkIfIdExists = async (id) => {
@@ -95,6 +95,7 @@ const checkIfIdExists = async (id) => {
   });
   return result.records.length > 0;
 };
+
 const getPages = new Promise((resolve, reject) => {
   const session = driver.session();
   session
@@ -107,6 +108,26 @@ const getPages = new Promise((resolve, reject) => {
       reject(error);
     });
 });
+
+const getGenres = (id = null) =>
+  new Promise((resolve, reject) => {
+    const session = driver.session();
+    const query = id
+      ? `MATCH (m:Movie {id:"${id}"})-[:GENRE]->(g:Genre) RETURN g`
+      : `MATCH (g:Genre) RETURN g`;
+    session
+      .run(query)
+      .then((result) => {
+        const genres = result.records.map(
+          (record) => record._fields[0].properties.name
+        );
+        console.log(genres, query);
+        resolve(genres);
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
 
 const getPopularMovies = async (page) => {
   const session = driver.session();
@@ -170,7 +191,9 @@ const addMovie = async (movie) => {
   const result = await session.run(query, params);
   return result;
 };
-
+//
+//Comments
+//
 const addComment = async (comment) => {
   const session = driver.session();
   const { movieId, userId, text, timestamp } = comment;
@@ -214,13 +237,16 @@ const getComments = async (movieId) => {
   const comments = result.records.map((record) => {
     return {
       user_id: record._fields[0].properties.id,
+      comment_id: record._fields[1].properties.id,
       text: record._fields[1].properties.text,
       timestamp: record._fields[1].properties.timestamp,
     };
   });
   return comments;
 };
-
+//
+//Ratings
+//
 const setRating = async (rating_data) => {
   const session = driver.session();
   const { movieId, userId, rating, timestamp } = rating_data;
@@ -235,7 +261,7 @@ const setRating = async (rating_data) => {
   };
   const result = await session.run(query, params);
   console.log(result);
-  return result.records[0]?._fields[0].properties || "Rating upadted";
+  return result.records[0]?._fields[0].properties || "Rating updated";
 };
 
 const getRatings = async (movieId) => {
@@ -266,4 +292,5 @@ module.exports = {
   getComments,
   setRating,
   getRatings,
+  getGenres,
 };

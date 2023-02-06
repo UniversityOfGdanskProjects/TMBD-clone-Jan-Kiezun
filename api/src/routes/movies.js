@@ -12,82 +12,158 @@ const {
   getComments,
   setRating,
   getRatings,
+  getGenres,
 } = require("../controllers/movies");
 const API_KEY = process.env.API_KEY;
 const axios = require("axios");
 const bcrypt = require("bcrypt");
 
 router.get("/", async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const movies = await getAllMovies(page);
-  res.send(movies);
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const movies = await getAllMovies(page);
+    res.send(movies);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
 });
 
 router.get("/popular", async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  console.log("page: ", page);
-  const movies = await getPopularMovies(page);
-  res.send(movies);
+  try {
+    const page = parseInt(req.query.page) || 1;
+    console.log("page: ", page);
+    const movies = await getPopularMovies(page);
+    res.send(movies);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
 });
 
 router.get("/search", async (req, res) => {
-  const query = req.query.q || "";
-  const page = parseInt(req.query.page) || 1;
-  const genre = req.query.genre || "";
-  const sort_field = req.query.sort || "";
+  try {
+    const query = req.query.q || "";
+    const page = parseInt(req.query.page) || 1;
+    const genres = req.query.genres || "";
+    const sort_field = req.query.sort || "";
 
-  const asc = (sort_field && req.query.asc) || "ASC";
-  const movies = await searchMovies(query, page, genre, sort_field, asc);
-  res.send(movies);
+    console.log(genres);
+
+    const genre = genres
+      .split(",")
+      .map((g) => g.trim())
+      .filter((g) => g.length > 0);
+
+    const order = (sort_field && req.query.order) || "ASC";
+    const movies = await searchMovies(query, page, genre, sort_field, order);
+    res.send(movies);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
 });
+
+router.get("/genres", async (req, res) => {
+  try {
+    const genres = await getGenres();
+    res.send(genres);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
+});
+
 router.get("/:id", async (req, res) => {
-  const id = req.params.id;
-  const movie = await getMovie(id);
-  res.send(movie);
+  try {
+    const id = req.params.id;
+    const movie = getMovie(id);
+    const genres = getGenres(id);
+    Promise.all([movie, genres]).then((values) => {
+      const [movie, genres] = values;
+      movie.genres = genres;
+      res.send(movie);
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
 });
 
 //
 //MOVIE CRUD
 //
 router.post("/add", async (req, res) => {
-  const movie = req.body;
-  const result = await addMovie(movie);
-  res.send({ message: "Movie added", result });
+  try {
+    const movie = req.body;
+    const result = await addMovie(movie);
+    res.send({ message: "Movie added", result });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
 });
 
 router.patch("/:movie_id", async (req, res) => {
-  const movie_id = req.params.movie_id;
-  const movie = req.body;
-  const result = await updateMovie(movie_id, movie);
-  res.send({ message: "Movie updated", result });
+  try {
+    const movie_id = req.params.movie_id;
+    const movie = req.body;
+    const result = await updateMovie(movie_id, movie);
+    res.send({ message: "Movie updated", result });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
 });
 //
 //COMMENTS CRUD
 //
-router.post("/comments/add", async (req, res) => {
-  const comment = req.body;
-  const result = await addComment(comment);
-  res.send({ message: "Comment added", result });
+router.post("/comments/:movieId", async (req, res) => {
+  try {
+    const comment = req.body;
+    const result = await addComment(movieId, comment);
+    res.send({ message: "Comment added", result });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
 });
 
-router.get("/comments/:id", async (req, res) => {
-  const id = req.params.id;
-  const comments = await getComments(id);
-  res.send(comments);
+router.get("/comments/:movieId", async (req, res) => {
+  try {
+    const id = req.params.movieId;
+    const comments = await getComments(id);
+    console.log(comments);
+    res.send(comments);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
 });
 //
 //RATINGS CRUD
 //
 router.put("/ratings/set", async (req, res) => {
-  const rating = req.body;
-  const result = await setRating(rating);
-  res.send({ result });
+  try {
+    const rating = req.body;
+    const result = await setRating(rating);
+    res.send({ result });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
 });
 
 router.get("/ratings/:id", async (req, res) => {
-  const id = req.params.id;
-  const ratings = await getRatings(id);
-  res.send(ratings);
+  try {
+    const id = req.params.id;
+    const ratings = await getRatings(id);
+    console.log(ratings);
+    res.send(ratings);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
 });
 
 module.exports = router;
