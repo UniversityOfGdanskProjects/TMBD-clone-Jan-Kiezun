@@ -34,7 +34,7 @@ function Home() {
   return (
     <div className="min-h-screen min-w-screen bg-gradient-to-br from-blue-300 to-blue-400 ">
       <NavBar />
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center ">
         <div
           className=" w-11/12  rounded-lg flex flex-col items-center text-black text-md font-bold
         "

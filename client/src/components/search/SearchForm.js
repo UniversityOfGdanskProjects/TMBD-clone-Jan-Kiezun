@@ -130,8 +130,8 @@ function SearchForm() {
               w-full
               h-10
               mt-auto
-              bg-green-500
-              hover:bg-green-600
+              bg-red-500
+              hover:bg-red-600
               rounded-md
               text-white
               font-bold

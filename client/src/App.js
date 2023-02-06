@@ -14,6 +14,8 @@ import LoginPanel from "./components/login/LoginPanel";
 import RegisterPanel from "./components/login/RegisterPanel";
 import SingleMovie from "./components/movie/SingleMovie";
 import Search from "./components/search/Search";
+import StatsPage from "./components/stats/StatsPage";
+import AdminPage from "./components/admin/AdminPage";
 
 function App() {
   const dispatch = useDispatch();
@@ -45,6 +47,26 @@ function App() {
           path="/search"
           element={
             loginStatus === "logged in" ? <Search /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/stats"
+          element={
+            loginStatus === "logged in" ? (
+              <StatsPage />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            loginStatus === "logged in" ? (
+              <AdminPage />
+            ) : (
+              <Navigate to="/login" />
+            )
           }
         />
         <Route

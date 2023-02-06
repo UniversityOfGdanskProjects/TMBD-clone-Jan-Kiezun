@@ -22,7 +22,7 @@ function PopularMovies() {
   return (
     <div
       className="w-full h-full flex flex-col items-center justify-center bg-black/10
-    rounded-lg 
+    rounded-lg
     "
     >
       <h1 className="text-4xl font-bold text-black my-2 drop-shadow-md">

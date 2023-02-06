@@ -35,6 +35,14 @@ export const deleteComment = createAsyncThunk(
   }
 );
 
+export const postComment = createAsyncThunk(
+  "comment/postComment",
+  async (comment) => {
+    const response = await axios.post(apiURL + "/add", comment);
+    return response.data;
+  }
+);
+
 export const commentSlice = createSlice({
   name: "comment",
   initialState,
@@ -56,6 +64,18 @@ export const commentSlice = createSlice({
         state.comments = action.payload;
       })
       .addCase(getComments.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      })
+
+      .addCase(postComment.pending, (state, action) => {
+        state.status = "loading";
+      })
+      .addCase(postComment.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.comments = action.payload;
+      })
+      .addCase(postComment.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message;
       })

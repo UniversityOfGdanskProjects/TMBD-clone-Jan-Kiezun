@@ -23,12 +23,13 @@ function SearchResults({ movies, getMovies }) {
             return <MovieCard key={movie.id} movie={movie} />;
           })}
       </div>
+
       <div
-        className="flex justify-center items-center mt-4 sticky bottom-0 w-[300px] p-2 rounded-t-xl
+        className="flex justify-center items-center mt-4 sticky bottom-0 w-[300px] mx-auto p-2 rounded-t-xl
         bg-gradient-to-br
         from-gray-800
         to-gray-900 gap-4 select-none
-      "
+        "
       >
         <button
           className={`bg-white hover:bg-gray-200 text-black font-bold py-2 px-4 rounded w-20`}

@@ -37,6 +37,9 @@ function MoviePage() {
     if (mdStatus === "idle") dispatch(getMovieDetails(id));
     if (mdStatus === "idle") dispatch(getRatings(id));
     if (mdStatus === "idle") setRatingLevel(currentUsersRating);
+    setTimeout(() => {
+      setRatingLevel(currentUsersRating);
+    }, 100);
   }, [dispatch, mdStatus, id]);
   return (
     <div className="w-full">
