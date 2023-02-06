@@ -3,26 +3,40 @@ import Ratings from "./Ratings";
 import { useDispatch, useSelector } from "react-redux";
 import { getMovieDetails } from "../../features/moviesTMDB/moviesSlice";
 import { useParams } from "react-router-dom";
+import { getRatings, putRating } from "../../features/moviesTMDB/ratingSlice";
 
 function MoviePage() {
   const dispatch = useDispatch();
   const { id } = useParams();
   const movies = useSelector((state) => state.moviesSlice);
-  const selectedMovie = movies.selectedMovie.movie;
+  const ratingSlice = useSelector((state) => state.ratingSlice);
+  const selectedMovie = movies.selectedMovie;
   const mdStatus = movies.mdStatus;
+  const users = useSelector((state) => state.usersSlice);
+  const user = users.user;
 
-  const [ratingLevel, setRatingLevel] = useState(0);
+  const currentUsersRating = parseInt(
+    (
+      ratingSlice.ratings.find((rating) => rating.user_id === user.id) || {
+        rating: "0",
+      }
+    ).rating.toString()[0]
+  );
+
+  const [ratingLevel, setRatingLevel] = useState(currentUsersRating);
 
   const MouseOver = (n) => (e) => {
     setRatingLevel(n + 1);
   };
 
   const MouseOut = (e) => {
-    setRatingLevel(0);
+    setRatingLevel(currentUsersRating);
   };
 
   useEffect(() => {
     if (mdStatus === "idle") dispatch(getMovieDetails(id));
+    if (mdStatus === "idle") dispatch(getRatings(id));
+    if (mdStatus === "idle") setRatingLevel(currentUsersRating);
   }, [dispatch, mdStatus, id]);
   return (
     <div className="w-full">
@@ -57,7 +71,18 @@ function MoviePage() {
                         onMouseOver={MouseOver(i)}
                         onMouseOut={MouseOut}
                         onClick={() => {
-                          console.log(i + 1);
+                          dispatch(
+                            putRating({
+                              movieId: id,
+                              rating: (i + 1).toString() + ".0",
+                              userId: user.id,
+                              timestamp: Date.now(),
+                            })
+                          );
+                          setTimeout(() => {
+                            dispatch(getRatings(id));
+                          }, 20);
+                          console.log((i + 1).toString() + ".0");
                         }}
                       >
                         {i < ratingLevel ? "★" : "☆"}
@@ -69,7 +94,17 @@ function MoviePage() {
               <div className="m-4 text-white bg-gradient-to-br from-gray-800/90 to-gray-900/90 w-[700px] p-4 rounded-xl flex flex-col items-end">
                 <div>
                   <h1 className="text-4xl font-bold">{selectedMovie.title}</h1>
-                  <p className="flex gap-4">
+                  <span
+                    className="
+                  text-xl font-light
+                  text-gray-400/50
+                  italic
+                  mb-4
+                  "
+                  >
+                    {"'" + selectedMovie.tagline + "'"}
+                  </span>
+                  <p className="flex gap-4 text-gray-200">
                     <span className="text-xl font-light">
                       Released: {selectedMovie.release_date}
                     </span>
@@ -83,11 +118,24 @@ function MoviePage() {
                   <h3 className="text-2xl font-bold">Overview</h3>
                   <p className="text-lg font-light">{selectedMovie.overview}</p>
                 </div>
-                <div className="bg-gray-200 w-1/4">
-                  <h3 className="text-2xl font-bold text-black text-center">
-                    Ratings
-                  </h3>
-                  <Ratings />
+                <Ratings />
+                <div
+                  className="
+                  flex flex-col gap-2 mt-auto mr-auto
+              "
+                >
+                  <h1 className="text-2xl font-bold">Genres</h1>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMovie.genres.length &&
+                      selectedMovie.genres.map((genre) => (
+                        <div
+                          key={genre.id}
+                          className="bg-gray-500/50 text-sm rounded-md p-1"
+                        >
+                          {genre}
+                        </div>
+                      ))}
+                  </div>
                 </div>
               </div>
             </div>

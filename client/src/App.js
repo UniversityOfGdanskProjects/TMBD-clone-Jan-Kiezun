@@ -22,9 +22,6 @@ function App() {
 
   return (
     <Router>
-      {/* <div className="min-h-screen min-w-screen">
-        {loginStatus === "logged in" ? <Home /> : <LoginPanel />}
-      </div> */}
       <Routes>
         <Route path="/login" element={<LoginPanel />} />
         <Route path="/register" element={<RegisterPanel />} />

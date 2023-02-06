@@ -2,6 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../features/moviesTMDB/usersSlice";
+import { resetSearch } from "../features/moviesTMDB/searchSlice";
 
 function NavBar() {
   const dispatch = useDispatch();
@@ -9,7 +10,7 @@ function NavBar() {
   return (
     <div
       className=" w-full h-16  bg-gradient-to-br from-gray-800 to-gray-900 flex justify-center items-center text-white text-2xl font-bold select-none
-
+    
   "
     >
       <div className="w-1/2 flex justify-between">
@@ -21,7 +22,10 @@ function NavBar() {
         </div>
         <div
           className="cursor-pointer border-b-2 border-black hover:border-white transition duration-200 ease-in-out"
-          onClick={() => navigate("/search")}
+          onClick={() => {
+            dispatch(resetSearch());
+            navigate("/search");
+          }}
         >
           Search
         </div>

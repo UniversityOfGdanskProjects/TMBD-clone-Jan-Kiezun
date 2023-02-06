@@ -1,16 +1,31 @@
-﻿import React from "react";
+﻿import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { getRatings } from "../../features/moviesTMDB/ratingSlice";
 
 function Ratings() {
   const dispatch = useDispatch();
   const movies = useSelector((state) => state.moviesSlice);
-  const ratings = movies.selectedMovie.ratings;
+  const users = useSelector((state) => state.usersSlice);
+  const ratings = useSelector((state) => state.ratingSlice.ratings);
+
+  const user = users.user;
+  const movieId = movies.selectedMovie.id;
+
+  useEffect(() => {
+    !ratings.length && dispatch(getRatings(movieId));
+  }, [dispatch, movieId]);
+
   return (
-    <div className="">
+    <div className="bg-gray-200 rounded-md p-2">
+      <span className="text-xl font-light text-black">Ratings</span>
       {ratings.map((rating) => {
         return (
-          <div>
-            <div class="flex items-center">
+          <div className="">
+            <div
+              class={`flex items-center ${
+                user !== [] && rating.user_id === user.id ? "bg-green-200" : ""
+              }`}
+            >
               {[...Array(parseInt(rating.rating[0]))].map((star) => {
                 return (
                   <svg

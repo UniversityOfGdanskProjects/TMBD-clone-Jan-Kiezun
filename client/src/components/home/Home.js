@@ -6,11 +6,29 @@ import Search from "../search/Search";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getPopularMovies } from "../../features/moviesTMDB/moviesSlice";
+import {
+  getSearchedMovies,
+  setSearchValues,
+} from "../../features/moviesTMDB/searchSlice";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const submitHandler = (e) => {
     e.preventDefault();
+    const searchTerm = e.target.elements[0].value;
+    dispatch(getSearchedMovies({ searchTerm: searchTerm, page: 1 }));
+    dispatch(
+      setSearchValues({
+        searchTerm: searchTerm,
+        genres: [],
+        sort: "",
+        order: "",
+        page: 1,
+      })
+    );
+    navigate("/search");
   };
 
   return (

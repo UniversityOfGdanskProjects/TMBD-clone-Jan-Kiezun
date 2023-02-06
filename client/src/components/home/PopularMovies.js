@@ -30,21 +30,7 @@ function PopularMovies() {
       </h1>
       <div className="flex flex-wrap justify-center gap-5 items-stretch">
         {popularMovies.length !== 0 &&
-          popularMovies.movies.map((movie) => (
-            <div
-              className="w-1/4 bg-white rounded-lg shadow-lg select-none
-              hover:shadow-2xl transition duration-200 ease-in-out transform hover:-translate-y-1 hover:scale-105
-              cursor-pointer"
-              key={movie.id}
-              onClick={() => {
-                dispatch(setMdStatus("idle"));
-                dispatch(setSelectedMovie(movie));
-                navigate(`/movie/${movie.id}`);
-              }}
-            >
-              <MovieCard movie={movie} />
-            </div>
-          ))}
+          popularMovies.movies.map((movie) => <MovieCard movie={movie} />)}
       </div>
       <div
         className="flex justify-center items-center mt-4 sticky bottom-0 w-[300px] p-2 rounded-t-xl
