@@ -15,6 +15,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use("/movies", require("./src/routes/movies"));
 app.use("/users", require("./src/routes/users"));
+app.use("/stats", require("./src/routes/stats"));
 
 app.listen(process.env.PORT, () => {
   console.log("Server started on port " + PORT);

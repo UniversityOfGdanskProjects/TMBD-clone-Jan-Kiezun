@@ -10,6 +10,8 @@ const {
   updateMovie,
   addComment,
   getComments,
+  updateComment,
+  deleteComment,
   setRating,
   getRatings,
   getGenres,
@@ -118,10 +120,10 @@ router.patch("/:movie_id", async (req, res) => {
 //
 //COMMENTS CRUD
 //
-router.post("/comments/:movieId", async (req, res) => {
+router.post("/comments/add", async (req, res) => {
   try {
     const comment = req.body;
-    const result = await addComment(movieId, comment);
+    const result = await addComment(comment);
     res.send({ message: "Comment added", result });
   } catch (err) {
     console.log(err);
@@ -133,8 +135,32 @@ router.get("/comments/:movieId", async (req, res) => {
   try {
     const id = req.params.movieId;
     const comments = await getComments(id);
-    console.log(comments);
     res.send(comments);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
+});
+
+router.patch("/comments/edit", async (req, res) => {
+  try {
+    const comment = req.body;
+    const result = await updateComment(comment);
+    res.send({ message: "Comment updated", result });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
+});
+
+router.delete("/comments/delete/:comment_id/:movie_id", async (req, res) => {
+  try {
+    const comment = {
+      comment_id: req.params.comment_id,
+      movie_id: req.params.movie_id,
+    };
+    const result = await deleteComment(comment);
+    res.send({ message: "Comment deleted", result });
   } catch (err) {
     console.log(err);
     res.status(500).send(err);

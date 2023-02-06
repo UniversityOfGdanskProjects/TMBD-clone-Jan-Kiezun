@@ -42,9 +42,7 @@ const getMovie = async (id) => {
       timestamp: record._fields[1].properties.timestamp,
     };
   });
-  // console.log(result.records[0]._fields[2]);
   const movie = result.records[0]._fields[2].properties;
-  console.log(movie);
 
   const comments = await getComments(id);
   const allInfo = movie;
@@ -63,7 +61,16 @@ const searchMovies = async (phrase, page, genres, sort_field, asc) =>
     } toLower(m.title) CONTAINS toLower("${phrase}")`;
     const toFloat =
       sort_field in ["rating", "popularity", "vote_average", "vote_count"];
-    const sortClause = sort_field ? `ORDER BY m.${sort_field} ${asc}` : "";
+    const toDate = sort_field in ["release_date"];
+    const sortClause = sort_field
+      ? `ORDER BY ${
+          toFloat
+            ? `toFloat(m.${sort_field})`
+            : toDate
+            ? `toDate(m.${sort_field})`
+            : `m.${sort_field}`
+        } ${asc}`
+      : "";
     const paginate = page > 1 ? `SKIP ${(page - 1) * 20}` : "";
     const query1 = `MATCH (m:Movie)-[r:GENRE]->(g:Genre) ${genresClause} ${whereClause} RETURN DISTINCT m ${sortClause} ${paginate} LIMIT 20`;
     const query2 = `MATCH (m:Movie)-[r:GENRE]->(g:Genre) ${genresClause} ${whereClause} RETURN count(m)`;
@@ -119,7 +126,6 @@ const getGenres = (id = null) =>
         const genres = result.records.map(
           (record) => record._fields[0].properties.name
         );
-        console.log(genres, query);
         resolve(genres);
       })
       .catch((error) => {
@@ -129,7 +135,6 @@ const getGenres = (id = null) =>
 
 const getPopularMovies = async (page) => {
   const session = driver.session();
-  console.log("page", page);
   const result = await session.run(
     `MATCH (movie:Movie) RETURN movie ORDER BY toFloat(movie.popularity) DESC ${
       page > 1 ? `SKIP ${(page - 1) * 20}` : ""
@@ -168,8 +173,6 @@ const addMovie = async (movie) => {
   while (await checkIfIdExists(id)) {
     id = Math.floor(Math.random() * 100000000000000000) + "";
   }
-  console.log(movie);
-  console.log(overview);
   const query = `CREATE (m:Movie {
     id: $id,
     title: $title,
@@ -194,13 +197,15 @@ const addMovie = async (movie) => {
 //
 const addComment = async (comment) => {
   const session = driver.session();
-  const { movieId, userId, text, timestamp } = comment;
-  const query = `MATCH (m:Movie {id: $movieId}), (u:User {id: $userId})
-  CALL apoc.create.relationship(u, "COMMENTED", {text: $text, timestamp: $timestamp}, m) YIELD rel
-  RETURN r`;
+  const { movie_id, user_id, text, timestamp } = comment;
+  const id = Math.floor(Math.random() * 1000000000) + "";
+  const query = `MATCH (m:Movie {id: $movie_id}), (u:User {id: $user_id})
+  CALL apoc.create.relationship(u, "COMMENTED", {id:$id, text: $text, timestamp: $timestamp}, m) YIELD rel
+  RETURN rel`;
   const params = {
-    movieId,
-    userId,
+    id,
+    movie_id,
+    user_id,
     text,
     timestamp,
   };
@@ -210,13 +215,13 @@ const addComment = async (comment) => {
 
 const updateComment = async (comment) => {
   const session = driver.session();
-  const { movieId, userId, text, timestamp } = comment;
-  const query = `MATCH (u:User {id: $userId})-[r:COMMENTED]->(m:Movie {id: $movieId})
+  const { user_id, comment_id, text, timestamp } = comment;
+  const query = `MATCH (u:User {id: $user_id})-[r:COMMENTED {id:$comment_id}]->(m:Movie)
   SET r.text = $text, r.timestamp = $timestamp
   RETURN r`;
   const params = {
-    movieId,
-    userId,
+    comment_id,
+    user_id,
     text,
     timestamp,
   };
@@ -224,10 +229,23 @@ const updateComment = async (comment) => {
   return result.records[0]._fields[0].properties;
 };
 
+const deleteComment = async (comment) => {
+  const session = driver.session();
+  const { movie_id, comment_id } = comment;
+  const query = `MATCH (u:User)-[r:COMMENTED {id:$comment_id}]->(m:Movie {id: $movie_id})
+  DELETE r`;
+  const params = {
+    movie_id,
+    comment_id,
+  };
+  const result = await session.run(query, params);
+  return result;
+};
+
 const getComments = async (movieId) => {
   const session = driver.session();
   const query = `MATCH (u:User)-[r:COMMENTED]->(m:Movie {id: $movieId})
-  RETURN u,r,m`;
+  RETURN u,r,m ORDER BY toFloat(r.timestamp) DESC`;
   const params = {
     movieId,
   };
@@ -258,7 +276,6 @@ const setRating = async (rating_data) => {
     timestamp,
   };
   const result = await session.run(query, params);
-  console.log(result);
   return result.records[0]?._fields[0].properties || "Rating updated";
 };
 
@@ -288,6 +305,8 @@ module.exports = {
   addMovie,
   addComment,
   getComments,
+  updateComment,
+  deleteComment,
   setRating,
   getRatings,
   getGenres,
