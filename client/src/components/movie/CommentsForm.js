@@ -2,7 +2,10 @@
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
-import { postComment } from "../../features/moviesTMDB/commentSlice";
+import {
+  postComment,
+  getComments,
+} from "../../features/moviesTMDB/commentSlice";
 
 function CommentsForm() {
   const dispatch = useDispatch();
@@ -24,10 +27,11 @@ function CommentsForm() {
           user_id: user.id,
           movie_id: selectedMovie.id,
         };
+        dispatch(postComment(comment));
         setTimeout(() => {
-          alert(JSON.stringify(comment, null, 2));
+          dispatch(getComments(selectedMovie.id));
           setSubmitting(false);
-        }, 400);
+        }, 100);
       }}
     >
       <Form className="  w-11/12 flex justify-center items-center text-2xl font-bold gap-2">

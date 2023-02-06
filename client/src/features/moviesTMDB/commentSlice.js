@@ -13,7 +13,6 @@ const initialState = {
 export const getComments = createAsyncThunk(
   "comment/getComments",
   async (movieId) => {
-    console.log(movieId);
     const response = await axios.get(apiURL + "/" + movieId);
     return response.data;
   }
@@ -30,7 +29,11 @@ export const editComment = createAsyncThunk(
 export const deleteComment = createAsyncThunk(
   "comment/deleteComment",
   async (comment) => {
-    const response = await axios.put(apiURL + "/delete", comment);
+    const { id, movie_id } = comment;
+    console.log("deleteComment", comment);
+    const response = await axios.delete(
+      apiURL + "/delete/" + id + "/" + movie_id
+    );
     return response.data;
   }
 );
@@ -73,7 +76,6 @@ export const commentSlice = createSlice({
       })
       .addCase(postComment.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.comments = action.payload;
       })
       .addCase(postComment.rejected, (state, action) => {
         state.status = "failed";
@@ -96,7 +98,6 @@ export const commentSlice = createSlice({
       })
       .addCase(deleteComment.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.comments = action.payload;
       })
       .addCase(deleteComment.rejected, (state, action) => {
         state.status = "failed";

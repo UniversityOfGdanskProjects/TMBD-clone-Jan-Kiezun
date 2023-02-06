@@ -6,6 +6,7 @@ import {
   getComments,
   editComment,
   setStatus,
+  deleteComment,
 } from "../../features/moviesTMDB/commentSlice";
 
 function Comments() {
@@ -25,7 +26,6 @@ function Comments() {
 
   const handleEditSubmit = (comment_id, user_id) => (e) => {
     e.preventDefault();
-    console.log(e.target);
     const text = editText;
     const comment = {
       comment_id,
@@ -41,7 +41,7 @@ function Comments() {
   };
 
   useEffect(() => {
-    if (status === "idle") {
+    if (status === "idle" || status === "failed") {
       dispatch(getComments(id));
     }
   }, [status, dispatch, id]);
@@ -101,7 +101,17 @@ function Comments() {
                       ? "Cancel"
                       : "Edit"}
                   </button>
-                  <button className="bg-blue-500 hover:bg-blue-700 text-white text-lg font-semibold py-2 px-4 rounded ">
+                  <button
+                    className="bg-blue-500 hover:bg-blue-700 text-white text-lg font-semibold py-2 px-4 rounded "
+                    onClick={() => {
+                      dispatch(
+                        deleteComment({ id: comment.comment_id, movie_id: id })
+                      );
+                      setTimeout(() => {
+                        dispatch(getComments(id));
+                      }, 50);
+                    }}
+                  >
                     Delete
                   </button>
                 </div>
