@@ -10,7 +10,7 @@ function MovieCard({ movie }) {
   const navigate = useNavigate();
   return (
     <div
-      className="w-[30%] max-h-[50%] bg-white rounded-lg shadow-lg select-none
+      className="w-[250px] max-h-[50%] bg-white rounded-lg shadow-lg select-none
               hover:shadow-2xl transition duration-200 ease-in-out transform hover:-translate-y-1 hover:scale-105
               cursor-pointer"
       key={movie.id}

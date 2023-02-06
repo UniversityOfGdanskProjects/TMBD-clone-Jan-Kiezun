@@ -22,7 +22,7 @@ export const getComments = createAsyncThunk(
 export const editComment = createAsyncThunk(
   "comment/editComment",
   async (comment) => {
-    const response = await axios.put(apiURL + "/edit", comment);
+    const response = await axios.patch(apiURL + "/edit", comment);
     return response.data;
   }
 );
@@ -85,13 +85,6 @@ export const commentSlice = createSlice({
       })
       .addCase(editComment.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.comments = state.comments.map((comment) => {
-          if (comment.user_id === action.payload.user_id) {
-            return action.payload;
-          } else {
-            return comment;
-          }
-        });
       })
       .addCase(editComment.rejected, (state, action) => {
         state.status = "failed";

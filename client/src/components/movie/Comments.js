@@ -2,7 +2,11 @@
 import CommentsForm from "./CommentsForm";
 import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { getComments } from "../../features/moviesTMDB/commentSlice";
+import {
+  getComments,
+  editComment,
+  setStatus,
+} from "../../features/moviesTMDB/commentSlice";
 
 function Comments() {
   const { id } = useParams();
@@ -11,11 +15,29 @@ function Comments() {
   const status = useSelector((state) => state.commentSlice.status);
   const error = useSelector((state) => state.commentSlice.error);
   const user = useSelector((state) => state.usersSlice.user);
-  const [editComment, setEditComment] = useState(null);
+  const [editWhichComment, setEditWhichComment] = useState(null);
+  const [editText, setEditText] = useState("");
 
   const handleEdit = (id) => (e) => {
     e.preventDefault();
-    setEditComment(editComment === id ? null : id);
+    setEditWhichComment(editWhichComment === id ? null : id);
+  };
+
+  const handleEditSubmit = (comment_id, user_id) => (e) => {
+    e.preventDefault();
+    console.log(e.target);
+    const text = editText;
+    const comment = {
+      comment_id,
+      user_id,
+      text,
+      timestamp: Math.floor(Date.now() / 1000),
+    };
+    dispatch(editComment(comment));
+    setTimeout(() => {
+      dispatch(getComments(id));
+    }, 50);
+    setEditWhichComment(null);
   };
 
   useEffect(() => {
@@ -33,17 +55,7 @@ function Comments() {
         <ul className="w-11/12 flex flex-col ">
           {comments.map((comment) => (
             <li
-              className="
-                w-full
-                flex
-                flex-col
-                justify-center
-                border-2
-                border-black
-                rounded-lg
-                p-2
-                my-2
-            "
+              className=" w-full flex flex-col justify-center border-2 border-black rounded-lg p-2 my-2"
               key={comment.id}
             >
               <div className="flex w-full">
@@ -58,20 +70,24 @@ function Comments() {
                 </div>
               </div>
               <div>{comment.text}</div>
-              {
-                // textarea for editing
-              }
-              {editComment === comment.comment_id && (
+              {editWhichComment === comment.comment_id && (
                 <textarea
                   className="w-full h-20 border-2 border-black rounded-lg p-2 my-2"
                   defaultValue={comment.text}
+                  onChange={(e) => setEditText(e.target.value)}
                 />
               )}
 
               {(user.id === comment.user_id || user.role === "admin") && (
                 <div className="flex w-full gap-4">
-                  {editComment === comment.comment_id ? (
-                    <button className="ml-auto bg-blue-500 hover:bg-blue-700 text-white text-lg font-semibold py-2 px-4 rounded ">
+                  {editWhichComment === comment.comment_id ? (
+                    <button
+                      className="ml-auto bg-blue-500 hover:bg-blue-700 text-white text-lg font-semibold py-2 px-4 rounded "
+                      onClick={handleEditSubmit(
+                        comment.comment_id,
+                        comment.user_id
+                      )}
+                    >
                       Save
                     </button>
                   ) : (
@@ -81,7 +97,9 @@ function Comments() {
                     className=" bg-blue-500 hover:bg-blue-700 text-white text-lg font-semibold py-2 px-4 rounded "
                     onClick={handleEdit(comment.comment_id)}
                   >
-                    Edit
+                    {editWhichComment === comment.comment_id
+                      ? "Cancel"
+                      : "Edit"}
                   </button>
                   <button className="bg-blue-500 hover:bg-blue-700 text-white text-lg font-semibold py-2 px-4 rounded ">
                     Delete
