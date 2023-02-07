@@ -15,7 +15,7 @@ function SearchResults({ movies, getMovies }) {
     <div className="w-full">
       <div
         className="
-      w-full mt-4 h-full min-h-[calc(100vh-4rem)] flex flex-wrap gap-4 items-stretch
+      w-full mt-4 h-full min-h-[calc(100vh-4rem)] flex flex-wrap gap-2 items-stretch
       "
       >
         {smStatus === "succeeded" &&

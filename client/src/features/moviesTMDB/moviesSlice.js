@@ -28,6 +28,19 @@ export const getMovieDetails = createAsyncThunk(
   }
 );
 
+export const addMovie = createAsyncThunk("movies/addMovie", async (movie) => {
+  const response = await axios.post(apiURL + "/add", movie);
+  return response.data;
+});
+
+export const deleteMovie = createAsyncThunk(
+  "movies/deleteMovie",
+  async (id) => {
+    const response = await axios.delete(apiURL + "/delete/" + id);
+    return response.data;
+  }
+);
+
 export const moviesSlice = createSlice({
   name: "movies",
   initialState,
@@ -61,6 +74,28 @@ export const moviesSlice = createSlice({
         state.selectedMovie = action.payload;
       })
       .addCase(getMovieDetails.rejected, (state, action) => {
+        state.mdStatus = "failed";
+        state.error = action.error.message;
+      })
+
+      .addCase(addMovie.pending, (state, action) => {
+        state.mdStatus = "loading";
+      })
+      .addCase(addMovie.fulfilled, (state, action) => {
+        state.mdStatus = "succeeded";
+      })
+      .addCase(addMovie.rejected, (state, action) => {
+        state.mdStatus = "failed";
+        state.error = action.error.message;
+      })
+
+      .addCase(deleteMovie.pending, (state, action) => {
+        state.mdStatus = "loading";
+      })
+      .addCase(deleteMovie.fulfilled, (state, action) => {
+        state.mdStatus = "succeeded";
+      })
+      .addCase(deleteMovie.rejected, (state, action) => {
         state.mdStatus = "failed";
         state.error = action.error.message;
       });

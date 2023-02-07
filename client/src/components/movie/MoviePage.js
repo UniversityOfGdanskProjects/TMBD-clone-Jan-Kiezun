@@ -1,8 +1,11 @@
 ﻿import React, { useEffect, useState } from "react";
 import Ratings from "./Ratings";
 import { useDispatch, useSelector } from "react-redux";
-import { getMovieDetails } from "../../features/moviesTMDB/moviesSlice";
-import { useParams } from "react-router-dom";
+import {
+  getMovieDetails,
+  deleteMovie,
+} from "../../features/moviesTMDB/moviesSlice";
+import { useParams, useNavigate } from "react-router-dom";
 import { getRatings, putRating } from "../../features/moviesTMDB/ratingSlice";
 
 function MoviePage() {
@@ -14,6 +17,7 @@ function MoviePage() {
   const mdStatus = movies.mdStatus;
   const users = useSelector((state) => state.usersSlice);
   const user = users.user;
+  const navigate = useNavigate();
 
   const currentUsersRating = parseInt(
     (
@@ -121,10 +125,26 @@ function MoviePage() {
                   <h3 className="text-2xl font-bold">Overview</h3>
                   <p className="text-lg font-light">{selectedMovie.overview}</p>
                 </div>
-                <Ratings />
+                <div className="flex w-full">
+                  <div className="flex flex-col gap-2 mt-auto mr-auto">
+                    <h3 className="text-2xl font-bold">Votes</h3>
+                    <div className="flex gap-2">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-xl font-light">
+                          Average: {selectedMovie.vote_average}
+                        </span>
+                        <span className="text-xl font-light">
+                          Count: {selectedMovie.vote_count}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Ratings />
+                </div>
                 <div
                   className="
-                  flex flex-col gap-2 mt-auto mr-auto
+                  flex flex-col gap-2 mt-auto w-full
               "
                 >
                   <a
@@ -133,14 +153,14 @@ function MoviePage() {
                     italic
                     mb-4
                     hover:text-gray-200
-                    
+
                     "
                     href={`https://www.themoviedb.org/movie/${selectedMovie?.tmdbId}`}
                   >
                     Link to TMDB
                   </a>
                   <h1 className="text-2xl font-bold">Genres</h1>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 w-full">
                     {selectedMovie.genres.length &&
                       selectedMovie.genres.map((genre) => (
                         <div
@@ -150,6 +170,17 @@ function MoviePage() {
                           {genre}
                         </div>
                       ))}
+                    {user.role === "admin" && !selectedMovie.poster_path && (
+                      <button
+                        className="ml-auto bg-gray-500/50 text-sm rounded-md p-1 hover:bg-gray-400/50 "
+                        onClick={() => {
+                          dispatch(deleteMovie(id));
+                          navigate("/");
+                        }}
+                      >
+                        DeleteMovie
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

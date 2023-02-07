@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useState } from "react";
 import CommentsForm from "./CommentsForm";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
   getComments,
@@ -18,6 +18,7 @@ function Comments() {
   const user = useSelector((state) => state.usersSlice.user);
   const [editWhichComment, setEditWhichComment] = useState(null);
   const [editText, setEditText] = useState("");
+  const location = useLocation();
 
   const handleEdit = (id) => (e) => {
     e.preventDefault();
@@ -41,10 +42,8 @@ function Comments() {
   };
 
   useEffect(() => {
-    if (status !== "loading" && status !== "succeeded") {
-      dispatch(getComments(id));
-    }
-  }, [status, dispatch, id]);
+    dispatch(getComments(id));
+  }, [location]);
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 text-gray-800 ">
