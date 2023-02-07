@@ -31,20 +31,11 @@ const getAllMovies = async (page) => {
 
 const getMovie = async (id) => {
   const session = driver.session();
-  const result = await session.run(
-    `match (u:User)-[r:RATED]->(m:Movie {id: $id}) return u,r,m`,
-    { id: id }
-  );
-  const ratings = result.records.map((record) => {
-    return {
-      user_id: record._fields[0].properties.id,
-      rating: record._fields[1].properties.rating,
-      timestamp: record._fields[1].properties.timestamp,
-    };
+  const result = await session.run(`match (m:Movie {id: $id}) return m`, {
+    id: id,
   });
-  const movie = result.records[0]._fields[2].properties;
+  const movie = result.records[0]._fields[0].properties;
 
-  const comments = await getComments(id);
   const allInfo = movie;
   return allInfo;
 };
@@ -163,35 +154,62 @@ const addMovie = async (movie) => {
     title,
     tagline,
     release_date,
-    genres,
     overview,
     vote_average,
     vote_count,
     popularity,
+    budget,
+    revenue,
+    genres,
   } = movie;
   let id = Math.floor(Math.random() * 100000000000000000) + "";
   while (await checkIfIdExists(id)) {
     id = Math.floor(Math.random() * 100000000000000000) + "";
   }
-  const query = `CREATE (m:Movie {
+  const genresString = genres.map((genre) => `"${genre}"`).toString();
+  const query = `CALL apoc.create.node(['Movie'], {
     id: $id,
     title: $title,
     tagline: $tagline,
     release_date: $release_date,
-    genres: $genres,
     overview: $overview,
     vote_average: $vote_average,
     vote_count: $vote_count,
-    popularity: $popularity
-  }) RETURN m`;
+    popularity: $popularity,
+    budget: $budget,
+    revenue: $revenue
+  }) YIELD node
+  WITH node as n, [${genresString}] as genres
+  UNWIND genres as genre
+  MATCH (g:Genre {name: genre})
+  CALL apoc.create.relationship(n, "GENRE", {}, g) YIELD rel
+  RETURN rel,n`;
   const params = {
     id: id,
     ...movie,
+    vote_average: 5,
+    vote_count: 100,
+  };
+
+  console.log(params);
+
+  console.log(query, genres.toString());
+  // return;
+  const result = await session.run(query, params);
+  return result;
+};
+
+const deleteMovie = async (id) => {
+  const session = driver.session();
+  const query = `MATCH (m:Movie {id: $id}) DETACH DELETE m`;
+  const params = {
+    id,
   };
 
   const result = await session.run(query, params);
   return result;
 };
+
 //
 //Comments
 //
@@ -303,6 +321,7 @@ module.exports = {
   searchMovies,
   getPopularMovies,
   addMovie,
+  deleteMovie,
   addComment,
   getComments,
   updateComment,

@@ -8,6 +8,7 @@ const {
   getPopularMovies,
   addMovie,
   updateMovie,
+  deleteMovie,
   addComment,
   getComments,
   updateComment,
@@ -117,6 +118,18 @@ router.patch("/:movie_id", async (req, res) => {
     res.status(500).send(err);
   }
 });
+
+router.delete("/delete/:movie_id", async (req, res) => {
+  try {
+    const movie_id = req.params.movie_id;
+    const result = await deleteMovie(movie_id);
+    res.send({ message: "Movie deleted", result });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
+});
+
 //
 //COMMENTS CRUD
 //
