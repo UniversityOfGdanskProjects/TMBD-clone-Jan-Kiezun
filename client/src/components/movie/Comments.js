@@ -41,7 +41,7 @@ function Comments() {
   };
 
   useEffect(() => {
-    if (status === "idle" || status === "failed") {
+    if (status !== "loading" && status !== "succeeded") {
       dispatch(getComments(id));
     }
   }, [status, dispatch, id]);
@@ -65,7 +65,7 @@ function Comments() {
                   alt="Avtr"
                 />
                 <div>@{comment.user_id}</div>
-                <div className="ml-auto">
+                <div className="ml-auto text-xl">
                   {new Date(comment.timestamp * 1000).toLocaleString()}
                 </div>
               </div>

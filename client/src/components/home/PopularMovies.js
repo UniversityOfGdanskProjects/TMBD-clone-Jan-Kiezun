@@ -25,10 +25,10 @@ function PopularMovies() {
     rounded-lg
     "
     >
-      <h1 className="text-4xl font-bold text-black my-2 drop-shadow-md">
+      <h1 className="text-4xl font-bold text-black my-5 drop-shadow-md">
         Popular Movies:
       </h1>
-      <div className="flex flex-wrap justify-center gap-5 items-stretch">
+      <div className="flex flex-wrap justify-center gap-6 items-stretch">
         {popularMovies.length !== 0 &&
           popularMovies.movies.map((movie) => <MovieCard movie={movie} />)}
       </div>

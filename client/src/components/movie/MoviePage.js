@@ -127,6 +127,18 @@ function MoviePage() {
                   flex flex-col gap-2 mt-auto mr-auto
               "
                 >
+                  <a
+                    className="text-xl font-bold
+                    text-gray-400/50
+                    italic
+                    mb-4
+                    hover:text-gray-200
+                    
+                    "
+                    href={`https://www.themoviedb.org/movie/${selectedMovie?.tmdbId}`}
+                  >
+                    Link to TMDB
+                  </a>
                   <h1 className="text-2xl font-bold">Genres</h1>
                   <div className="flex flex-wrap gap-2">
                     {selectedMovie.genres.length &&
