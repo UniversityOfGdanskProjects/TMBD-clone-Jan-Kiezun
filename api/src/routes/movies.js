@@ -107,7 +107,7 @@ router.post("/add", async (req, res) => {
   }
 });
 
-router.patch("/:movie_id", async (req, res) => {
+router.patch("/update/:movie_id", async (req, res) => {
   try {
     const movie_id = req.params.movie_id;
     const movie = req.body;

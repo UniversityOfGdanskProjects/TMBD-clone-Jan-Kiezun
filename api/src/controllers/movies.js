@@ -210,6 +210,30 @@ const deleteMovie = async (id) => {
   return result;
 };
 
+const updateMovie = async (id, movie) => {
+  const session = driver.session();
+  const query = `MATCH (m:Movie {id: $id}) 
+  SET m.title = $title,
+  m.tagline = $tagline,
+  m.release_date = $release_date,
+  m.overview = $overview,
+  m.vote_average = $vote_average,
+  m.vote_count = $vote_count,
+  m.popularity = $popularity,
+  m.budget = $budget,
+  m.revenue = $revenue
+  RETURN m`;
+  const params = {
+    id,
+    ...movie,
+    vote_average: 5,
+    vote_count: 100,
+  };
+
+  const result = await session.run(query, params);
+  return result;
+};
+
 //
 //Comments
 //
@@ -322,6 +346,7 @@ module.exports = {
   getPopularMovies,
   addMovie,
   deleteMovie,
+  updateMovie,
   addComment,
   getComments,
   updateComment,
