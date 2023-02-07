@@ -147,18 +147,20 @@ function MoviePage() {
                   flex flex-col gap-2 mt-auto w-full
               "
                 >
-                  <a
-                    className="text-xl font-bold
+                  {selectedMovie?.tmdbId && (
+                    <a
+                      className="text-xl font-bold
                     text-gray-400/50
                     italic
                     mb-4
                     hover:text-gray-200
 
                     "
-                    href={`https://www.themoviedb.org/movie/${selectedMovie?.tmdbId}`}
-                  >
-                    Link to TMDB
-                  </a>
+                      href={`https://www.themoviedb.org/movie/${selectedMovie?.tmdbId}`}
+                    >
+                      Link to TMDB
+                    </a>
+                  )}
                   <h1 className="text-2xl font-bold">Genres</h1>
                   <div className="flex flex-wrap gap-2 w-full">
                     {selectedMovie.genres.length &&
@@ -171,15 +173,25 @@ function MoviePage() {
                         </div>
                       ))}
                     {user.role === "admin" && !selectedMovie.poster_path && (
-                      <button
-                        className="ml-auto bg-gray-500/50 text-sm rounded-md p-1 hover:bg-gray-400/50 "
-                        onClick={() => {
-                          dispatch(deleteMovie(id));
-                          navigate("/");
-                        }}
-                      >
-                        DeleteMovie
-                      </button>
+                      <div className="ml-auto flex gap-2">
+                        <button
+                          className="bg-gray-500/50 text-sm rounded-md p-1 hover:bg-gray-400/50 "
+                          onClick={() => {
+                            navigate("/admin/edit/" + id);
+                          }}
+                        >
+                          EditInfo
+                        </button>
+                        <button
+                          className=" bg-gray-500/50 text-sm rounded-md p-1 hover:bg-gray-400/50 "
+                          onClick={() => {
+                            dispatch(deleteMovie(id));
+                            navigate("/");
+                          }}
+                        >
+                          DeleteMovie
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

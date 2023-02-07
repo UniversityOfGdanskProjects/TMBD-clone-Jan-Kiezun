@@ -3,27 +3,38 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import { getGenres } from "../../features/moviesTMDB/searchSlice";
-import { addMovie } from "../../features/moviesTMDB/moviesSlice";
+import {
+  addMovie,
+  getMovieDetails,
+  updateMovie,
+} from "../../features/moviesTMDB/moviesSlice";
+import { useParams } from "react-router-dom";
 
-function AddMovieForm() {
+function AddMovieForm({ action }) {
   const dispatch = useDispatch();
   const { genres } = useSelector((state) => state.searchSlice);
+  const selectedMovie = useSelector((state) => state.moviesSlice.selectedMovie);
+  const { id } = useParams();
 
   useEffect(() => {
+    if (id) {
+      dispatch(getMovieDetails(id));
+      console.log(selectedMovie);
+    }
     dispatch(getGenres());
   }, [dispatch]);
 
   return (
     <Formik
       initialValues={{
-        title: "",
-        overview: "",
-        release_date: "",
-        tagline: "",
-        budget: "",
-        revenue: "",
-        popularity: "",
-        genres: [],
+        title: selectedMovie?.title || "",
+        overview: selectedMovie?.overview || "",
+        release_date: selectedMovie?.release_date || "",
+        tagline: selectedMovie?.tagline || "",
+        budget: selectedMovie?.budget || "",
+        revenue: selectedMovie?.revenue || "",
+        popularity: selectedMovie?.popularity || "",
+        genres: selectedMovie?.genres || [],
       }}
       validationSchema={Yup.object({
         title: Yup.string()
@@ -53,7 +64,11 @@ function AddMovieForm() {
           genres: values.genres,
         };
 
-        dispatch(addMovie(movie));
+        if (id) {
+          dispatch(updateMovie({ id, movie }));
+        } else {
+          dispatch(addMovie(movie));
+        }
 
         setSubmitting(false);
       }}

@@ -60,10 +60,20 @@ function App() {
           }
         />
         <Route
-          path="/admin"
+          path="/admin/add"
           element={
             loginStatus === "logged in" ? (
-              <AdminPage />
+              <AdminPage action="add" />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/admin/edit/:id"
+          element={
+            loginStatus === "logged in" ? (
+              <AdminPage action="edit" />
             ) : (
               <Navigate to="/login" />
             )

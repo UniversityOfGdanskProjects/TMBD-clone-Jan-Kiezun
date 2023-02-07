@@ -19,6 +19,7 @@ function MovieCard({ movie }) {
         dispatch(setSelectedMovie(movie));
         navigate(`/movie/${movie.id}`);
       }}
+      draggable="false"
     >
       <div
         className="h-full flex flex-col items-center text-black text-md font-bold
@@ -33,6 +34,7 @@ function MovieCard({ movie }) {
               "https://via.placeholder.com/500/333333/FFFFFF/?text=PosterNotFound :(";
           }}
           alt={movie.title}
+          draggable="false"
         />
         <div className="p-2">
           <h1 className="text-lg font-bold ">{movie.title}</h1>

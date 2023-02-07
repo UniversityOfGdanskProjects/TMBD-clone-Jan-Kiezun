@@ -41,6 +41,14 @@ export const deleteMovie = createAsyncThunk(
   }
 );
 
+export const updateMovie = createAsyncThunk(
+  "movies/updateMovie",
+  async ({ id, movie }) => {
+    const response = await axios.patch(apiURL + "/update/" + id, movie);
+    return response.data;
+  }
+);
+
 export const moviesSlice = createSlice({
   name: "movies",
   initialState,
@@ -96,6 +104,17 @@ export const moviesSlice = createSlice({
         state.mdStatus = "succeeded";
       })
       .addCase(deleteMovie.rejected, (state, action) => {
+        state.mdStatus = "failed";
+        state.error = action.error.message;
+      })
+
+      .addCase(updateMovie.pending, (state, action) => {
+        state.mdStatus = "loading";
+      })
+      .addCase(updateMovie.fulfilled, (state, action) => {
+        state.mdStatus = "succeeded";
+      })
+      .addCase(updateMovie.rejected, (state, action) => {
         state.mdStatus = "failed";
         state.error = action.error.message;
       });
